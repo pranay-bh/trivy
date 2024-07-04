@@ -12,6 +12,7 @@ scan:
      - echo "finding defects in yaml file"
      - echo "display defect report"
      - echo "publish artifacts"
+     - fail test
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
