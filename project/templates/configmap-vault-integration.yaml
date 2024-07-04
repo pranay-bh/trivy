@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-integration-configmap
+data:
+  vault-integration.sh: |
+    if [ "$VAULT_ENABLE" = "true" ]; then
+
+        VAULT_TOKEN="$VAULT_TOKEN"
+        VAULT_PATH="$VAULT_PATH"
+        VAULT_ADDRESS="http://$VAULT_SERVICE_HOST:$VAULT_SERVICE_PORT/v1/secret/data/$VAULT_PATH"
+        echo "address: " $VAULT_ADDRESS
+        VAULT_HEADER="X-Vault-Token: $VAULT_TOKEN"
+
+        echo "Installing necessary packages: curl and jq..."
+        which apt-get && apt-get update && apt-get install -y curl jq
+        curl
+        jq
+
+        HTTP_STATUS_CODE=$(curl -s --location "$VAULT_ADDRESS" --header "X-Vault-Token: $VAULT_TOKEN" -o /dev/null -w "%{http_code}")
+        
+        if [ "$HTTP_STATUS_CODE" = "000" ]; then
+            echo "Service not found on given URL: $VAULT_ADDRESS"
+            exit 0
+        elif [ "$HTTP_STATUS_CODE" = "404" ]; then
+            echo "Store does not exist. Initializing Vault store in $VAULT_PATH for the first time..."
+            BODY=$(env | sort | jq -R -n 'reduce inputs as $line ({}; . + ($line | split("=") | {(.[0]): .[1]})) | {"data": .}')
+            curl -s -H "$VAULT_HEADER" -H "Content-Type: application/json" -X POST -d "$BODY" "$VAULT_ADDRESS" -o /dev/null
+            echo 1 > /tmp/version.txt
+            exit 0
+        elif [ "$HTTP_STATUS_CODE" = "403" ]; then
+            echo "Incorrect token: $VAULT_TOKEN for $VAULT_ADDRESS"
+            exit 0
+        else
+            echo "Status code: $HTTP_STATUS_CODE"
+            echo "$(curl -s -H "$VAULT_HEADER" "$VAULT_ADDRESS" | jq -r '.data.metadata.version')" > /tmp/liveness-version.txt
+
+
+            if cmp -s /tmp/version.txt /tmp/liveness-version.txt; then 
+                echo "Environment variable version $(cat /tmp/liveness-version.txt) is up to date"
+                exit 0
+            else
+                echo "New environment variable version $(cat /tmp/liveness-version.txt) detected"
+                JSON_DATA="$(curl -s -H "$VAULT_HEADER" "$VAULT_ADDRESS")"
+                echo "$( echo $JSON_DATA | jq -r '.data.metadata.version')" > /tmp/version.txt
+                rm /tmp/.env || true
+                echo "Exporting variables for $VAULT_PATH with version $(cat /tmp/version.txt)"
+                keys=$(echo "$JSON_DATA" | jq -r '.data.data | keys[]')
+                for key in $keys; do
+                    value=$(echo "$JSON_DATA" | jq -r ".data.data[\"$key\"]")
+                    export "$key"="$value"
+                    # echo "Exporting variable: $key=$value"
+                    echo "$key=\"$value\"" >> /tmp/.env
+                done
+                exit 1
+            fi
+        fi
+    else
+        echo "VAULT_ENABLE is not set to true. Doing nothing and moving on as expected."
+    fi

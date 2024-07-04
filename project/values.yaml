@@ -1,0 +1,23 @@
+microServices:
+  myapp: true
+  vault: true
+
+myapp:
+  VAULT_ENABLE: true
+  VAULT_PATH: "frontend"
+  TEMPLATE_TITLE: "My title"
+  TEMPLATE_TEXT_COLOR: "black"
+  TEMPLATE_BACKGROUND_COLOR: "whitesmoke"
+  TEMPLATE_HEADER: "Hello, world!"
+  TEMPLATE_CONTENT: "This is a demo."
+
+vault:
+  TOKEN: "admin"
+
+ingress:
+  routing: 
+    hpcsa: "public"
+  hpcsa:
+    host: hpcsa.com
+  vault:
+   host: hpcsa-vault.com

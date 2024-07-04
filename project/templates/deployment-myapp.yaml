@@ -1,0 +1,101 @@
+{{- if .Values.microServices.myapp -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp
+  labels:
+    service: myapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      service: myapp
+  template:
+    metadata:
+      labels:
+        service: myapp
+    spec:
+      restartPolicy: Always
+      volumes:
+        - name: vault-integration-volume
+          configMap:
+            name: vault-integration-configmap
+        - name: vault-integration-volume-2 
+      initContainers:
+          - name: vault-init
+            image: dwdraju/alpine-curl-jq
+            env:
+              - name: VAULT_ENABLE
+                value: {{ .Values.myapp.VAULT_ENABLE | quote }}
+            command: ["/bin/sh"]
+            args:
+              - "-c"
+              - |
+                #!/bin/sh
+                echo "" >> /tmp/.env
+            volumeMounts:
+              - name: vault-integration-volume
+                mountPath: /var/tmp
+              - name: vault-integration-volume-2
+                mountPath: /tmp
+      
+      containers:
+        - name: myapp
+          image: nginx
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh"]
+          args:
+            - "-c"
+            - |
+              #!/bin/sh
+              
+              . /tmp/.env
+
+              # Create index.html using environment variables 
+              TEMPLATE="<!DOCTYPE html><html><head><meta charset='UTF-8' /><title>$TEMPLATE_TITLE</title><style> body { color: $TEMPLATE_TEXT_COLOR; background-color: $TEMPLATE_BACKGROUND_COLOR; } </style></head><body><h1>$TEMPLATE_HEADER</h1><p>$TEMPLATE_CONTENT</p></body></html>"
+              echo $TEMPLATE > /usr/share/nginx/html/index.html
+              
+              # Starting the main process
+              nginx -g 'daemon off;'
+          volumeMounts:
+            - name: vault-integration-volume
+              mountPath: /var/tmp
+            - name: vault-integration-volume-2
+              mountPath: /tmp
+          env:
+            - name: VAULT_ENABLE
+              value: {{ .Values.myapp.VAULT_ENABLE | quote }}
+            - name: VAULT_PATH
+              value: {{ .Values.myapp.VAULT_PATH | quote }}
+            - name: VAULT_TOKEN
+              value: {{ .Values.vault.TOKEN | quote }}
+            - name: TEMPLATE_TITLE
+              value: {{ .Values.myapp.TEMPLATE_TITLE | quote }}
+            - name: TEMPLATE_TEXT_COLOR
+              value: {{ .Values.myapp.TEMPLATE_TEXT_COLOR | quote }}
+            - name: TEMPLATE_BACKGROUND_COLOR
+              value: {{ .Values.myapp.TEMPLATE_BACKGROUND_COLOR | quote }}
+            - name: TEMPLATE_HEADER
+              value: {{ .Values.myapp.TEMPLATE_HEADER | quote }}
+            - name: TEMPLATE_CONTENT
+              value: {{ .Values.myapp.TEMPLATE_CONTENT | quote }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          livenessProbe:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - |
+                cp /var/tmp/vault-integration.sh /tmp/ && chmod +x /tmp/vault-integration.sh && VAULT_PATH=myapp && /tmp/vault-integration.sh
+            initialDelaySeconds: 10
+            periodSeconds: 2
+            timeoutSeconds: 60
+            failureThreshold: 1
+{{- end -}}
