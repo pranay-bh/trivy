@@ -5,9 +5,13 @@ stages:
   - deploy
 
 scan:
+  image: aquasec/trivy:latest # Using the Trivy Docker image
   stage: scan
   script:
-    - echo "Hello world!"
+     - echo "Checking for new or modified YAML files..."
+     - echo "finding defects in yaml file"
+     - echo "display defect report"
+     - echo "publish artifacts"
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
