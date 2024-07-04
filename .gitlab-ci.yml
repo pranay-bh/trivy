@@ -41,7 +41,7 @@ scan:
    stage: scan
    allow_failure: true
    script:
-     - trivy conf --severith HIGH,CRITICAL .
+     - trivy conf --severity HIGH,CRITICAL .
 
 
 test:
