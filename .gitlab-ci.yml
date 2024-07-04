@@ -1,14 +1,20 @@
 stages:
+  - scan
   - test
   - build
   - deploy
+
+scan:
+  stage: scan
+  script:
+    - echo "Hello world!"
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
 test:
   stage: test
   script:
     - echo "Hello world!"
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
 build:
   stage: build
