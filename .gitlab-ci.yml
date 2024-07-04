@@ -36,6 +36,12 @@ scan:
    script:
      - trivy fs --scanners vuln .
 
+00 scan trivy IAAC:
+   image: aquasec/trivy:latest
+   stage: scan
+   allow_failure: true
+   script:
+     - trivy conf --severith HIGH,CRITICAL .
 
 
 test:
