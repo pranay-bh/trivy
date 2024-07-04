@@ -6,7 +6,9 @@ stages:
 test:
   stage: test
   script:
-    - echo "Running tests..."
+    - echo "Hello world!"
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
 
 build:
   stage: build
