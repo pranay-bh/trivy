@@ -1,0 +1,19 @@
+database:
+  user: admin
+  password: supersecretpassword   
+  host: localhost
+  port: 3306
+services:
+  web:
+    image: webapp:latest
+    ports:
+      - "80:80"
+  db:
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: password123   
+    ports:
+      - "3306:3306"
+logging:
+  level: DEBUG    
+  output: /var/log/app.log
