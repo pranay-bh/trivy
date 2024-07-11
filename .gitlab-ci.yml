@@ -1,14 +1,50 @@
 stages:
+  - scan
   - test
   - build
   - deploy
+
+.trivy-scan-template:
+  image: aquasec/trivy:latest
+  stage: scan
+  allow_failure: true
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    
+scan:
+  image: aquasec/trivy:latest
+  script:
+     - echo "Checking for new or modified YAML files..."
+     - echo "finding defects in yaml file"
+     - echo "display defect report"
+     - echo "publish artifacts"
+
+
+00 scan trivy misconfig:
+   extends: .trivy-scan-template
+   script:
+     - trivy fs --scanners misconfig .
+
+00 scan trivy license:
+   extends: .trivy-scan-template
+   script:
+     - trivy fs --scanners license .
+
+00 scan trivy file system:
+   extends: .trivy-scan-template
+   script:
+     - trivy fs --scanners vuln .
+
+00 scan trivy IAAC:
+   extends: .trivy-scan-template
+   script:
+     - trivy conf --severity HIGH,CRITICAL .
+
 
 test:
   stage: test
   script:
     - echo "Hello world!"
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
 build:
   stage: build
