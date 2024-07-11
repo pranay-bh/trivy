@@ -4,42 +4,39 @@ stages:
   - build
   - deploy
 
-scan:
-  image: aquasec/trivy:latest # Using the Trivy Docker image
+.trivy-scan-template:
+  image: aquasec/trivy:latest
   stage: scan
+  allow_failure: true
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"
+    
+scan:
+  image: aquasec/trivy:latest
   script:
      - echo "Checking for new or modified YAML files..."
      - echo "finding defects in yaml file"
      - echo "display defect report"
      - echo "publish artifacts"
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
 
 00 scan trivy misconfig:
-   image: aquasec/trivy:latest
-   stage: scan
-   allow_failure: true
+   extends: .trivy-scan-template
    script:
      - trivy fs --scanners misconfig .
 
 00 scan trivy license:
-   image: aquasec/trivy:latest
-   stage: scan
-   allow_failure: true
+   extends: .trivy-scan-template
    script:
      - trivy fs --scanners license .
 
 00 scan trivy file system:
-   image: aquasec/trivy:latest
-   stage: scan
-   allow_failure: true
+   extends: .trivy-scan-template
    script:
      - trivy fs --scanners vuln .
 
 00 scan trivy IAAC:
-   image: aquasec/trivy:latest
-   stage: scan
-   allow_failure: true
+   extends: .trivy-scan-template
    script:
      - trivy conf --severity HIGH,CRITICAL .
 
