@@ -25,6 +25,11 @@ scan:
    script:
      - trivy fs --scanners misconfig .
 
+00 scan trivy secret:
+   extends: .trivy-scan-template
+   script:
+     - trivy fs --scanners secret .
+
 00 scan trivy license:
    extends: .trivy-scan-template
    script:
