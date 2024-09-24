@@ -23,22 +23,22 @@ scan:
 00 scan trivy misconfig:
    extends: .trivy-scan-template
    script:
-     - trivy fs --severity HIGH,CRITICAL --exit-code 1 --scanners misconfig .
+     - trivy fs --severity HIGH,CRITICAL --exit-code 1 --scanners misconfig ./project
 
 00 scan trivy license:
    extends: .trivy-scan-template
    script:
-     - trivy fs --severity HIGH,CRITICAL --exit-code 1 --scanners license .
+     - trivy fs --severity HIGH,CRITICAL --exit-code 1 --scanners license ./project
 
 00 scan trivy file system:
    extends: .trivy-scan-template
    script:
-     - trivy fs --severity HIGH,CRITICAL --exit-code 1 --scanners vuln .
+     - trivy fs --severity HIGH,CRITICAL --exit-code 1 --scanners vuln ./project
 
 00 scan trivy IAAC:
    extends: .trivy-scan-template
    script:
-     - trivy conf --severity HIGH,CRITICAL --exit-code 1 .
+     - trivy conf --severity HIGH,CRITICAL --exit-code 1 ./project
 
 
 test:
