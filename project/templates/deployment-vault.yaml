@@ -15,6 +15,24 @@ spec:
       labels:
         service: vault
     spec:
+      initContainers:
+      - name: volume-mount-hack
+        image: busybox
+        command: ["sh", "-c", "chown -R 1000:1000 /data"]
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        resources:
+          requests:
+            memory: "32Mi"
+            cpu: "0.1"
+          limits:
+            memory: "32Mi"
+            cpu: "0.1"
+        securityContext:
+          runAsUser: 0
+          runAsNonRoot: false
+          readOnlyRootFilesystem: false
       containers:
         - name: vault
           image: hashicorp/vault:latest
