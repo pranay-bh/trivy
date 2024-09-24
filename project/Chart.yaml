@@ -1,5 +1,5 @@
 apiVersion: v1
 appVersion: release-1
 description: Vault FE deployment
-name: HPCSA project
+name: HPCSA
 version: 1
