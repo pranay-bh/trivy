@@ -1,59 +1,106 @@
-# helm-keycloak
-Smart injection of environment variables in already running kubernetes cluster
 
-## Build architecture
-![image](readme/0.PNG)
+# GitLab CI/CD Pipeline with Trivy Security Scans
 
-## Install microk8s with helm
-01. cd VAULT_DEMO
-02. sudo ./deploy_with_microk8s.sh
+This repository contains a comprehensive GitLab CI/CD pipeline designed to integrate security scanning using Trivy as a core component. The pipeline scans YAML files and container images submitted through Pull Requests (PRs) and makes decisions based on the severity and number of vulnerabilities detected.
 
-## INITIAL SETUP 
-1. Visit https://hpcsa-vault.com/
-2. accept self sining certificate
-3. the followig page will be visbile
-![image](readme/1.PNG)
+## Table of Contents
+- [Architecture Overview](#architecture-overview)
+- [Pipeline Workflow](#pipeline-workflow)
+- [Configuration](#configuration)
+- [Custom GitLab Runner](#custom-gitlab-runner)
+- [Reports](#reports)
+- [Decision Criteria](#decision-criteria)
+- [Usage](#usage)
 
-4. Enter token: admin
-5. Click on Sign in
-6. VAULT HOOME PAGE: 
-![image](readme/2.PNG)
+## Architecture Overview
 
-7. Goto secret and click create new secret
-![image](readme/3.PNG)
+The pipeline is structured to automatically scan for vulnerabilities whenever a PR is submitted. It is equipped to:
+- Scan YAML files and container images for vulnerabilities.
+- Generate detailed reports with Trivy.
+- Make automated decisions based on predefined criteria about whether a PR is accepted or rejected.
 
-8. path for secret: myapp
-   Toggle json and add following json:  
+## Pipeline Workflow
 
-```json
-   {
-  "TEMPLATE_TITLE": "My title",
-  "TEMPLATE_TEXT_COLOR": "black",
-  "TEMPLATE_BACKGROUND_COLOR": "whitesmoke",
-  "TEMPLATE_HEADER": "Hello, world!",
-  "TEMPLATE_CONTENT": "This is a demo."
-  }
+The CI/CD pipeline begins when a PR is created. The stages of the pipeline include:
+1. **Build**: Builds the application or container image.
+2. **Scan**: Runs Trivy security scans on YAML files and container images.
+3. **Report**: Generates reports based on scan results.
+4. **Decision**: Accepts or rejects the PR based on the scan reports.
+
+For more details, refer to the architecture diagram:
+
+![Merge Request Workflow](figures/flow.png)
+
+## Configuration
+
+The GitLab CI/CD pipeline is defined in the `.gitlab-ci.yml` file. It outlines the stages, jobs, and their respective triggers.
+
+### Example Configuration
+
+```yaml
+stages:
+  - build
+  - scan
+  - report
+  - deploy
+
+scan:
+  stage: scan
+  script:
+    - trivy --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed .
+  only:
+    - merge_requests
 ```
-![image](readme/4.PNG)
 
-9. click on save
+You can find more detailed configurations in the `.gitlab-ci.yml` file.
 
-## Build verification
-1. Visit https://hpcsa.com/ and verify the base page 
-![image](readme/5.PNG)
+## Custom GitLab Runner
 
-## Incremental changes
-1. Update any of the variable defined in the vault
-2. Wait for few seconds, frontend will show 503 service not available error, which indicates that service is restarting
-3. The changes will be reflectes as soon as container restarts
+A custom GitLab Runner is used to meet the specific requirements of this pipeline. The runner is built from a Dockerfile that includes necessary dependencies like Trivy. The runner ensures that each job is executed within a secure and isolated environment.
 
+The Dockerfile used for the runner is available in the Appendix.
 
-Things to do: 
-- diagram (sequence diagram or component diagram)
-- use basic application
-- report initial version
-- thesis topic selection
+## Reports
 
-https://mermaid.js.org/syntax/sequenceDiagram.html
-https://hps.vi4io.org/research/open-theses
-https://data.goettingen-research-online.de/dataverse/gwdg-final-theses
+Trivy generates multiple types of reports:
+- **Vulnerability reports**: Highlight critical, high, medium, and low severity vulnerabilities.
+- **Misconfiguration reports**: Highlight potential misconfigurations in YAML and other configuration files.
+
+Example of a report:
+
+![Trivy Scan Failure](figures/failure_reason.png)
+
+## Decision Criteria
+
+The pipeline includes an automated admission control mechanism to determine whether a PR is accepted or rejected. The criteria include:
+- **Critical vulnerabilities**: Result in automatic rejection of the PR.
+- **High, Medium vulnerabilities**: Provide warnings, but the PR might still be accepted based on thresholds.
+  
+Rejected PRs are provided with actionable feedback in the form of comments, guiding the submitter on how to resolve the vulnerabilities.
+
+![Trivy and IaC Scan Failures](figures/trivy_scan_failed.png)
+
+## Usage
+
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/pranay-bh/trivy.git
+   cd trivy
+   ```
+
+2. **Configure the GitLab Runner**:
+   - Ensure your runner is set up with the necessary dependencies to support the Trivy scan.
+   - Register the runner with your GitLab project.
+
+3. **Pipeline execution**:
+   - Create a PR in your repository to trigger the CI/CD pipeline.
+   - The pipeline will automatically run the security scans and generate reports.
+   - Based on the scan results, the pipeline will either accept or reject the PR.
+
+4. **Review reports**:
+   - If the pipeline fails, review the Trivy report to understand the vulnerabilities.
+   - Make the necessary changes and re-submit the PR.
+
+---
+
+This repository demonstrates how to integrate security scanning into a CI/CD pipeline, ensuring that your code remains secure before it is merged into the main branch. 
